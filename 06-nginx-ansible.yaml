@@ -1,0 +1,12 @@
+- name: Nginx Pod telepítése Ansible-vel
+  hosts: localhost
+  gather_facts: no
+  become: no
+  vars:
+    kubeconfig_path: ./kubeconfig
+  tasks:
+    - name: Deploy nginx pod and service
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        state: present
+        definition: "{{ lookup('file', 'nginx-pod.yaml') }}"
