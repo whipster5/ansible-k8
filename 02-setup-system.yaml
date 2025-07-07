@@ -1,0 +1,41 @@
+---
+- name: Szerver konfigurációk módosítása
+  hosts: all
+  become: yes
+  handlers:
+  - name: reboot
+    reboot:
+    
+  tasks:
+  - name: FirewallD kikapcsolása
+    ansible.builtin.service:
+      name: firewalld
+      enabled: no
+      state: stopped
+
+  - name: SELinux kikapcsolása
+    ansible.posix.selinux:
+      state: disabled
+    notify:
+      - reboot
+
+  - name: Kernel paraméterek beállítása
+    ansible.posix.sysctl:
+      sysctl_set: true
+      state: present
+      reload: true
+      name: "{{ item.name }}"
+      value: "{{ item.value }}"
+    loop:
+      - { name: net.ipv4.ip_forward, value: 1 }
+      - { name: vm.overcommit_memory, value: 1 }
+
+  - name: Swap kikapcsolása
+    ansible.builtin.command: swapoff -a
+  
+  - name: Swap kikapcsolása (állandó)
+    ansible.builtin.replace:
+      path: /etc/fstab
+      regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+      replace: '#\1\2\3swap\4'
+      backup: yes

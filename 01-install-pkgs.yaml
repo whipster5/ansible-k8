@@ -1,0 +1,13 @@
+---
+- name: Szükséges csomagok telepítése
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Csomagok telepítése
+    ansible.builtin.dnf:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - curl 
+      - iptables

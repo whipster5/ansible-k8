@@ -1,0 +1,34 @@
+---
+- name: Kubectl letöltése 
+  hosts: localhost
+  become: yes
+  
+  tasks:
+  - name: Bináris letöltése
+    ansible.builtin.get_url:
+      url: https://dl.k8s.io/release/v1.33.0/bin/linux/amd64/kubectl
+      dest: /usr/local/bin/kubectl
+      mode: 0755
+      owner: root
+      group: root
+
+- name: Konfiguráció megszerzése
+  hosts: server
+  become: yes
+
+  tasks: 
+  - name: Konfiguráció letöltése
+    ansible.builtin.fetch:
+      src: /etc/rancher/k3s/k3s.yaml
+      dest: /home/vagrant/kubeconfig
+      owner: vagrant
+      group: vagrant
+      flat: yes
+
+  - name: Konfiguráció módosítása (IP)
+    ansible.builtin.replace:
+      path: /home/vagrant/kubeconfig
+      regexp: "server: https://127.0.0.1:6443"
+      replace: "server: https://{{ ansible_host }}:6443"
+    delegate_to: localhost
+    become: no

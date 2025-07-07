@@ -1,0 +1,45 @@
+---
+- name: K3S Server node telepítése
+  hosts: server
+  become: yes
+
+  tasks:
+  - name: Pre-check
+    ansible.builtin.wait_for:
+      host: "{{ ansible_host }}"
+      port: 6443
+      timeout: 5
+      state: started
+    register: portstate
+    ignore_errors: yes
+
+  - name: Lépjünk ki, ha már fut
+    ansible.builtin.fail:
+      msg: Itt már fut egy Kubernetes!
+    when: portstate == "started"
+  
+  - name: Telepítő script letöltése
+    ansible.builtin.get_url:
+      url: https://get.k3s.io/
+      dest: /root/install-k3s.sh
+      mode: '0744'
+
+
+  - name: K3S telepítése
+    ansible.builtin.command: bash /root/install-k3s.sh
+    environment:
+      INSTALL_K3S_EXEC: "--advertise-address={{ ansible_host }}"
+      K3S_TOKEN: "cubix"
+    changed_when: true
+
+  - name: Konfiguráció módosítása
+    ansible.builtin.copy:
+      content: |
+        tls-san:
+          - k3s-server01
+      dest: /etc/rancher/k3s/config.yaml
+
+  - name: K3S újraindítása
+    ansible.builtin.service:
+      name: k3s
+      state: restarted

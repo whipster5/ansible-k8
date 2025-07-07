@@ -1,0 +1,19 @@
+---
+- name: K3S worker node telepítése
+  hosts: worker
+  become: yes
+
+  tasks:
+  - name: Telepítő script letöltése
+    ansible.builtin.get_url:
+      url: https://get.k3s.io/
+      dest: /root/install-k3s.sh
+      mode: '0744'
+
+
+  - name: K3S telepítése
+    ansible.builtin.command: bash /root/install-k3s.sh
+    environment:
+      K3S_URL: "https://{{ hostvars['k3s-server01']['ansible_host'] }}:6443"
+      K3S_TOKEN: "cubix"
+    changed_when: true
